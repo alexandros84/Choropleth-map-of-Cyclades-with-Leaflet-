@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<link rel="stylesheet" type="text/css" href="map_style.css"> 
+
+<script type="text/javascript" src="islandsC.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.1.0/dist/leaflet.css"
+   integrity="sha512-wcw6ts8Anuw10Mzh9Ytw4pylW8+NAD4ch3lqm9lzAsTxg0GFeJgoAtxuCLREZSC5lUXdVyo/7yfsqFjQ4S+aKw=="
+   crossorigin=""/>
+   
+ <script src="https://unpkg.com/leaflet@1.1.0/dist/leaflet.js"
+   integrity="sha512-mNqn2Wg7tSToJhvHcqfzLMU6J4mkOImSPTxVZAdo+lcPlk+GhZmYgACEe0x35K7YzW1zJ7XyJV/TT1MrdXvMcA=="
+   crossorigin=""></script>
+ 
+<script>
+
+var geojson;
+
+function initialize_map() {
+
+var mymap = L.map('mapid').setView([36.81808, 25.3949], 8);
+
+L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiYWxleGFuZHJvczg0IiwiYSI6ImNqNGtpZXBtNTBreHozM25yNzRqbDJjNXMifQ.wqEFIT4nLrKSnncw_0zWgA', {
+    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+    id: 'mapbox.light',
+	maxZoom: 9
+}).addTo(mymap);
+
+var numberIcon = L.icon({
+      className: "number-icon",
+	  iconUrl: 'ship.png',
+      iconSize: [120, 60],
+      iconAnchor: [0, 44],
+      popupAnchor: [40, -30],        
+});
+
+var marker = L.marker([35.83117,24.48303],{ icon: numberIcon }).addTo(mymap);
+
+marker.bindPopup("<span style='text-align: center;'><b>We are fishing!</b></span>");
+
+var popup = L.popup();
+
+function onMapClick(e) {
+    var container = document.getElementById("A");
+	var couple = (/\d+.\d+, \d+.\d+/g).exec(e.latlng).toString();
+    var splitted = couple.split(", ");
+    var joined = "["+splitted[1]+","+splitted[0]+"],";
+	var text = document.createTextNode(joined);
+	var span = document.createElement("span");
+	span.appendChild(text);
+    container.appendChild(span);
+}
+
+mymap.on('click', onMapClick);
+
+function getColor(d) {
+    return d > 60 ? '#08519c' :
+           d > 50 ? '#2171b5' :
+           d > 40 ? '#4292c6' :
+           d > 30 ? '#6baed6' :
+           d > 20 ? '#9ecae1' :
+           d > 10 ? '#c6dbef' :
+           d > 5  ? '#deebf7' :
+                    '#f7fbff' ;
+}
+
+function style(feature) {
+    return {
+        fillColor: getColor(feature.properties.density),
+        weight: 2,
+        opacity: 1,
+        color: 'white',
+        //dashArray: '3',
+        fillOpacity: 0.7
+    };
+}
+
+geojson = L.geoJson(islandsData, {style: style, onEachFeature: onEachFeature}).addTo(mymap);
+
+function onEachFeature(feature, layer) {
+    layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetHighlight,
+        //click: zoomToFeature
+    });
+}
+
+var info = L.control();
+
+info.onAdd = function (map) {
+    this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+    this.update();
+    return this._div;
+};
+
+info.update = function (props) {
+    this._div.innerHTML = '<h4>Cyclades Population Density</h4>' + 'Hover over an island' + '<br>' + '<br>' + (props ?
+    '<b>' + props.name + ': </b><br />' + props.density + ' people / km<sup>2</sup>'
+    : '');
+};
+
+info.addTo(mymap);
+
+function highlightFeature(e) {
+    var layer = e.target;
+
+    layer.setStyle({
+        weight: 3,
+        color: '#fff',
+        dashArray: '',
+        fillOpacity: 0.7
+    });
+
+    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+        layer.bringToFront();
+    }
+	info.update(layer.feature.properties);
+}
+
+function resetHighlight(e) {
+    geojson.resetStyle(e.target);
+	info.update();
+}
+
+}
+
+function clearC() {
+	var container = document.getElementById("A");
+	container.innerHTML = "";
+}
+
+function lineBreak() {
+	var container = document.getElementById("A");
+	var lineBreak = document.createElement("br");
+	container.appendChild(lineBreak);
+}
+
+function lastElement() {
+	var container = document.getElementById("A");	
+	container.removeChild(container.lastChild);
+}
+
+
+</script>
+
+</head>
+<body onload='initialize_map()'>
+<div id="mapid"></div>
+<div id="text">Click anywhere on the map to get the geojson (not lat,lng) coords of that point. You can use the controllers on the left in order to construct easily geojson multipolygons.</div>
+<div id="A" ></div>
+<div id="B" onclick='clearC()' title="Clear All"></div>
+<div id="Ca"></div>
+<div id="C" onclick='lineBreak()' title="Line break"></div>
+<div id="D" onclick='lastElement()' title="Last element"></div>
+
+</body>
+</html>
